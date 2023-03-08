@@ -1,29 +1,34 @@
 package com.driver.model;
 
+import org.apache.catalina.LifecycleState;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "user")
 public class User {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String username;
     private String password;
     private String originalIp;
     private String maskedIp;
-    boolean connected;
+    private Boolean connected;
 
-
+    //parent wrt to country'=
     @OneToOne(mappedBy = "user",cascade = CascadeType.ALL)
-    Country country;
+    private Country originalCountry;
 
+    //parent wrt to connection
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
-    List<Connection>connectionList=new ArrayList<>();
+    private List<Connection> connectionList = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "users",cascade = CascadeType.ALL)
-    List<ServiceProvider>serviceProviderList=new ArrayList<>();
+    @ManyToMany
+    @JoinColumn
+    private List<ServiceProvider> serviceProviderList = new ArrayList<>();
 
     public User() {
     }
@@ -68,20 +73,20 @@ public class User {
         this.maskedIp = maskedIp;
     }
 
-    public boolean isConnected() {
+    public Boolean getConnected() {
         return connected;
     }
 
-    public void setConnected(boolean connected) {
+    public void setConnected(Boolean connected) {
         this.connected = connected;
     }
 
-    public Country getCountry() {
-        return country;
+    public Country getOriginalCountry() {
+        return originalCountry;
     }
 
-    public void setCountry(Country country) {
-        this.country = country;
+    public void setOriginalCountry(Country originalCountry) {
+        this.originalCountry = originalCountry;
     }
 
     public List<Connection> getConnectionList() {
@@ -100,4 +105,3 @@ public class User {
         this.serviceProviderList = serviceProviderList;
     }
 }
-

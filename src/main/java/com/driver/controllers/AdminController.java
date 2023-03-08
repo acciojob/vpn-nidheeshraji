@@ -3,7 +3,6 @@ package com.driver.controllers;
 import com.driver.model.Admin;
 import com.driver.model.ServiceProvider;
 import com.driver.services.impl.AdminServiceImpl;
-import org.apache.catalina.valves.rewrite.InternalRewriteMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,32 +22,18 @@ public class AdminController {
     }
 
     @PostMapping("/addProvider")
-    public ResponseEntity<Admin> addServiceProvider(@RequestParam int adminId, @RequestParam String providerName){
+    public ResponseEntity<Void> addServiceProvider(@RequestParam int adminId, @RequestParam String providerName){
         //add a serviceProvider under the admin and return updated admin
         Admin admin = adminService.addServiceProvider(adminId, providerName);
-        return new ResponseEntity<>(admin,HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/addCountry")
-    public ResponseEntity<?> addCountry(@RequestParam int serviceProviderId, @RequestParam String countryName) throws Exception{
+    public ResponseEntity<Void> addCountry(@RequestParam int serviceProviderId, @RequestParam String countryName) throws Exception{
         //add a country under the serviceProvider and return respective service provider
         //country name would be a 3-character string out of ind, aus, usa, chi, jpn. Each character can be in uppercase or lowercase. You should create a new Country object based on the given country name and add it to the country list of the service provider. Note that the user attribute of the country in this case would be null.
         //In case country name is not amongst the above mentioned strings, throw "Country not found" exception
-        countryName=countryName.toUpperCase();
-        if(!countryName.equals("IND") || !countryName.equals("AUS") || !countryName.equals("USA")|| !countryName.equals("CHI")|| !countryName.equals("JPN"))
-        {
-            String message="Country not found";
-            return  new ResponseEntity<>(message,HttpStatus.BAD_REQUEST);
-        }
-        try {
-            ServiceProvider serviceProvider = adminService.addCountry(serviceProviderId, countryName);
-            return  new ResponseEntity<>(serviceProvider,HttpStatus.OK);
-        }
-        catch (Exception e)
-        {
-            return  new ResponseEntity<>(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-
-
+        ServiceProvider serviceProvider = adminService.addCountry(serviceProviderId, countryName);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

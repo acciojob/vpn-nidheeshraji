@@ -11,8 +11,6 @@ import com.driver.services.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class AdminServiceImpl implements AdminService {
     @Autowired
@@ -26,40 +24,54 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Admin register(String username, String password) {
-        Admin admin=new Admin();
-        admin.setPassword(password);
+        // create admin entity
+        Admin admin = new Admin();
         admin.setUsername(username);
+        admin.setPassword(password);
+
+        // save admin
         adminRepository1.save(admin);
         return admin;
-
     }
 
     @Override
     public Admin addServiceProvider(int adminId, String providerName) {
-        Admin admin=adminRepository1.findById(adminId).get();
-        ServiceProvider serialProvider=new ServiceProvider();
-        serialProvider.setName(providerName);
-        serialProvider.setAdmin(admin);
-        List<ServiceProvider>serialProviderList=admin.getServiceProviders();
-        serialProviderList.add(serialProvider);
-        adminRepository1.save(admin);
-      return  admin;
+        // fetch admin
+        Admin admin = adminRepository1.findById(adminId).get();
+        // crete serviceProvider entity
+        ServiceProvider serviceProvider = new ServiceProvider();
 
+        serviceProvider.setAdmin(admin);
+        serviceProvider.setName(providerName);
+        admin.getServiceProviders().add(serviceProvider);
+
+        // save parent ie admin wrt serviceProvider;
+        adminRepository1.save(admin);
+        return admin;
     }
 
     @Override
-    public ServiceProvider addCountry(int serviceProviderId, String countryName) throws Exception{
+    public ServiceProvider addCountry(int serviceProviderId, String countryName) throws Exception {
 
+        if (!CountryName.isValid(countryName)) {
+            throw new Exception("Country not found");
+        }
 
-          ServiceProvider serviceProvider = serviceProviderRepository1.findById(serviceProviderId).get();
-          Country country = new Country();
-          country.setCountryName(CountryName.valueOf(countryName));
-          country.setServiceProvider(serviceProvider);
-          country.setCodes(String.valueOf(CountryName.valueOf(countryName)));
-          serviceProvider.getCountryList().add(country);
-          serviceProviderRepository1.save(serviceProvider);
+        // fetch
+        ServiceProvider serviceProvider = serviceProviderRepository1.findById(serviceProviderId).get();
+        // create county entity
+        Country country = new Country();
 
-          return serviceProvider;
+        // set attr.
+        CountryName name = CountryName.valueOf(countryName.toUpperCase());
+        country.setCountryName(name);
+        country.setCode(name.toCode());
+        country.setServiceProvider(serviceProvider);
+        serviceProvider.getCountryList().add(country);
+        // save parent
+        serviceProviderRepository1.save(serviceProvider);
+
+        return serviceProvider;
 
     }
 }

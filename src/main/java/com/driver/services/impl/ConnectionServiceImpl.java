@@ -21,107 +21,113 @@ public class ConnectionServiceImpl implements ConnectionService {
 
     @Override
     public User connect(int userId, String countryName) throws Exception{
-        User user=userRepository2.findById(userId).get();
-        if(user.isConnected())
-        {
-            throw new Exception("connected");
+        // fetch user
+        User user = userRepository2.findById(userId).get();
+
+        if(user.getConnected()){
+            throw new Exception("Already connected");
         }
-        String originalCountry=user.getCountry().getCountryName().toString();
 
-        //coded country name
-
-      /* String codedcountry="";
-        if(countryName=="IND")
-            codedcountry="001";
-        if(countryName=="IND")
-            codedcountry="001";
-        if(countryName=="IND")
-            codedcountry="001";
-        if(countryName=="IND")
-            codedcountry="001";
-        */
-
-
-
-
-        if(countryName==originalCountry)
+        if(countryName.equalsIgnoreCase(user.getOriginalCountry().getCountryName().toString())){
             return user;
-
-
-        List<ServiceProvider> serviceProviderList=user.getServiceProviderList();
-        if(serviceProviderList==null)
-        {
-            throw  new Exception("Not possible");
         }
-        ServiceProvider serviceProvider=null;
-        Country country = null;
-        int n=serviceProviderList.size();
-        for(int i=0;i<n;i++)
-        {
-            List<Country>countryList=serviceProviderList.get(i).getCountryList();
-            for(int j=0;j<countryList.size();j++)
-            {
-                Country dummy=countryList.get(j);
-               if(dummy.getCountryName().toString().equals(countryName))
-               {
-                   if(country==null)
-                       country=dummy;
-                   else if (dummy.getId()<country.getId())
-                   {
-                       country=dummy;
-                   }
-               }
 
+        if (user.getServiceProviderList()==null){
+            throw new Exception("Unable to connect");
+        }
+
+        List<ServiceProvider> serviceProviderList = user.getServiceProviderList();
+        int max = Integer.MAX_VALUE;
+        ServiceProvider serviceProvider = null;
+        Country country =null;
+
+        for(ServiceProvider serviceProvider1:serviceProviderList){
+            List<Country> countryList = serviceProvider1.getCountryList();
+
+            for (Country country1: countryList){
+
+                if(countryName.equalsIgnoreCase(country1.getCountryName().toString()) && max > serviceProvider1.getId() ){
+                    max=serviceProvider1.getId();
+                    serviceProvider=serviceProvider1;
+                    country=country1;
+                }
             }
+        }
+        if (serviceProvider!=null){
+            Connection connection = new Connection();
+            connection.setUser(user);
+            connection.setServiceProvider(serviceProvider);
 
+            String countryC = country.getCode();
+            int givenId = serviceProvider.getId();
+            String mask = countryC+"."+givenId+"."+userId;
+
+            user.setConnected(true);
+            user.setMaskedIp(mask);
+            user.getConnectionList().add(connection);
+
+            serviceProvider.getConnectionList().add(connection);
+
+            userRepository2.save(user);
+            serviceProviderRepository2.save(serviceProvider);
 
         }
-        if(country==null)
-            throw new Exception("Not possible");
 
-
-
-
-        user.setConnected(true);
-        Connection connection=new Connection();
-        List<Connection>connectionList=user.getConnectionList();
-        connectionList.add(connection);
-        connection.setUser(user);
-
-
-
-return user;
-
-
+        return user;
     }
     @Override
     public User disconnect(int userId) throws Exception {
+        // fetch user
+        User user = userRepository2.findById(userId).get();
 
-        User user=userRepository2.findById(userId).get();
-        if(!user.isConnected())
-            throw new Exception("disconnected");
-        user.setMaskedIp(null);
+        // --
+        if(user.getConnected()==false){
+            throw new Exception("Already disconnected");
+        }
+
         user.setConnected(false);
-        return  user;
-
-
-
+        user.setMaskedIp(null);
+        //save user
+        userRepository2.save(user);
+        return user;
     }
     @Override
     public User communicate(int senderId, int receiverId) throws Exception {
-        User sender=userRepository2.findById(senderId).get();
-        User receiver=userRepository2.findById(receiverId).get();
-     if(receiver.isConnected())
-      {
-          String countrycode=receiver.getMaskedIp().substring(0,3);
-          receiver.getCountry().setCountryName(CountryName.valueOf(countrycode));
-      }
-     if(receiver.getCountry().getCountryName().equals(sender.getCountry().getCountryName()))
-     {
-         return  sender;
-     }
+        User user = userRepository2.findById(senderId).get();
+        User user1 = userRepository2.findById(receiverId).get();
 
-    return sender;
+        if(user1.getMaskedIp()!=null){
+            String str = user1.getMaskedIp();
+            String countryCode = str.substring(0,3);
+
+            if(countryCode.equals(user.getOriginalCountry().getCode())){
+                return user;
+            }
+
+
+            String countryName =  CountryName.getCountryName(countryCode);
+            User user2 = connect(senderId,countryName);
+
+
+            if (!user2.getConnected()){
+                throw new Exception("Cannot establish communication");
+            }
+            return user2;
+
+        }
+
+        if(user1.getOriginalCountry().equals(user.getOriginalCountry())){
+            return user;
+        }
+
+        String countryName = user1.getOriginalCountry().getCountryName().toString();
+
+        User user2 =  connect(senderId,countryName);
+        if (!user2.getConnected()){
+            throw new Exception("Cannot establish communication");
+        }
+        return user2;
+
 
     }
 }

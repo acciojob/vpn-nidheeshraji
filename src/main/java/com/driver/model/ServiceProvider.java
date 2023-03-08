@@ -5,27 +5,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "service_providers")
 public class ServiceProvider {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String name;
 
-@ManyToOne
+    // child wrt to admin
+    @ManyToOne
     @JoinColumn
-    Admin admin;
+    private Admin admin;
 
-@ManyToMany
-    @JoinColumn
-    List<User>users=new ArrayList<>();
+    // parent wrt to connection;
+    @OneToMany(mappedBy = "serviceProvider",cascade = CascadeType.ALL)
+    private List<Connection> connectionList = new ArrayList<>();
 
-@OneToMany(mappedBy = "serviceProvider",cascade = CascadeType.ALL)
-List<Connection>connectionList=new ArrayList<>();
+    // parent wrt to country
+    @OneToMany(mappedBy = "serviceProvider",cascade = CascadeType.ALL)
+    private List<Country> countryList = new ArrayList<>();
 
-
-@OneToMany(mappedBy = "serviceProvider",cascade = CascadeType.ALL)
-List<Country>countryList=new ArrayList<>();
-
+    @ManyToMany(mappedBy = "serviceProviderList",cascade = CascadeType.ALL)
+    private List<User> users= new ArrayList<>();
 
     public ServiceProvider() {
     }
@@ -54,14 +55,6 @@ List<Country>countryList=new ArrayList<>();
         this.admin = admin;
     }
 
-    public List<User> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<User> users) {
-        this.users = users;
-    }
-
     public List<Connection> getConnectionList() {
         return connectionList;
     }
@@ -76,5 +69,13 @@ List<Country>countryList=new ArrayList<>();
 
     public void setCountryList(List<Country> countryList) {
         this.countryList = countryList;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 }

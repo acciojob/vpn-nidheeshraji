@@ -11,8 +11,6 @@ import com.driver.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -24,45 +22,56 @@ public class UserServiceImpl implements UserService {
     CountryRepository countryRepository3;
 
     @Override
-    public User register(String username, String password, String countryName) throws Exception{
-        User user=new User();
+    public User register(String username, String password, String countryName) throws Exception {
+        //check validation
+        if (!CountryName.isValid(countryName)) {
+            throw new Exception("Country not found");
+        }
+
+        // create user Entity
+        User user = new User();
         user.setUsername(username);
         user.setPassword(password);
+
+        // create Country entity
+        Country country = new Country();
+        //set attr. according to validation
+        CountryName name = CountryName.valueOf(countryName.toUpperCase());
+        country.setCountryName(name);
+        country.setCode(name.toCode());
+
+//        Country country = countryRepository3.findByCountryName(countryName);
+
         user.setConnected(false);
-        user.setMaskedIp(null);
-        String ip="";
-        if(countryName=="IND" ||countryName=="ind")
-            ip=ip+"001.";
-        if(countryName=="USA" ||countryName=="usa")
-            ip=ip+"002.";
-        if(countryName=="AUS" ||countryName=="aus")
-            ip=ip+"003.";
-        if(countryName=="CHI" ||countryName=="chi")
-            ip=ip+"004.";
-        if(countryName=="JPN" ||countryName=="jpn")
-            ip=ip+"005.";
-     String userid= String.valueOf(user.getId());
-     ip=ip+userid;
-      user.setOriginalIp(ip);
-        Country country=user.getCountry();
-        country.setCountryName(CountryName.valueOf(countryName));
         country.setUser(user);
-        user.setCountry(country);
+        user.setOriginalCountry(country);
+
+
+        User user1 = userRepository3.save(user);
+
+        // set originalIp i.e "countryCode.userId";
+        StringBuilder sb = new StringBuilder();
+        sb.append(country.getCode()).append(".").append(user1.getId());
+        user.setOriginalIp(sb.toString());
+
+        //update repo
         userRepository3.save(user);
+
         return user;
-
-
     }
 
     @Override
     public User subscribe(Integer userId, Integer serviceProviderId) {
-        User user=userRepository3.findById(userId).get();
-        ServiceProvider serviceProvider=serviceProviderRepository3.findById(serviceProviderId).get();
-        List<ServiceProvider> serviceProviderList=user.getServiceProviderList();
-        List<User>userList=serviceProvider.getUsers();
-        serviceProviderList.add(serviceProvider);
-        userList.add(user);
-        userRepository3.save(user);
+        // fetch user & serviceProvider
+        User user = userRepository3.findById(userId).get();
+        ServiceProvider serviceProvider = serviceProviderRepository3.findById(serviceProviderId).get();
+
+        // update user & serviceProvider
+        user.getServiceProviderList().add(serviceProvider);
+        serviceProvider.getUsers().add(user);
+
+        //save parent
+        serviceProviderRepository3.save(serviceProvider);
         return user;
     }
 }

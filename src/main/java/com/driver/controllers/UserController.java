@@ -13,13 +13,11 @@ public class UserController {
     UserServiceImpl userService;
     @PostMapping("/register")
     public ResponseEntity<Void> registerUser(@RequestParam String username, @RequestParam String password, @RequestParam String countryName) throws Exception{
-        //create a user of given country. The originalIp of the user should be "countryCode.userId" and return the user. Note that right now user is not connected and thus connected would be false and maskedIp would be null
+        //create a user of given country. The originalIp of the user should be "countryCode.userId" and return the user.
+        // Note that right now user is
+        // not connected and thus connected would be false and maskedIp would be null
         //Note that the userId is created automatically by the repository layer
-        try {
-            User user = userService.register(username, password, countryName);
-        }
-        catch (Exception e){
-            throw new Exception("error");}
+        User user = userService.register(username, password, countryName);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
